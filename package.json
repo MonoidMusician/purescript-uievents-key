@@ -1,0 +1,14 @@
+{
+  "name": "purescript-uievents-key",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MonoidMusician/purescript-uievents-key.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MonoidMusician/purescript-uievents-key/issues"
+  },
+  "dependencies": {
+    "unorm": "^1.4.1"
+  }
+}
