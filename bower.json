@@ -9,8 +9,10 @@
   "dependencies": {
     "purescript-prelude": "^3.1.1",
     "purescript-console": "^3.0.0",
-    "purescript-unicode": "^3.0.2",
-    "purescript-unorm": "^0.0.0"
+    "purescript-unicode": "99e1549038bd73d3725e7770c768a79b77407c63",
+    "purescript-unorm": "^0.0.0",
+    "purescript-profunctor-lenses": "^3.8.0",
+    "purescript-generics-rep": "^5.4.0"
   },
   "devDependencies": {
     "purescript-psci-support": "^3.0.0",
