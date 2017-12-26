@@ -11,8 +11,8 @@ import Data.String.Normalize (nfc)
 import Data.Tuple (Tuple(..))
 import Web.UIEvents.Key.Internal (Key(..))
 
-otherChars :: Map String Key
-otherChars = fromFoldable
+otherPrinting :: Map String Key
+otherPrinting = fromFoldable
   [ Tuple "\n" Enter
   , Tuple "\t" Tab
   , Tuple "\x0008" Backspace
@@ -30,10 +30,16 @@ verifyKeyString = toCodePointArray >>> A.uncons >>> case _ of
         U.generalCategory c <#> eq U.SpacingCombiningMark
     in not U.isControl head && A.all isCombining tail
 
+toPrinting :: Key -> String
+toPrinting Enter = "\n"
+toPrinting Tab = "\t"
+toPrinting (Unicode c) = c
+toPrinting _ = ""
+
 normalizeKeyString :: String -> Maybe Key
 normalizeKeyString s =
   let n = nfc s
-  in case lookup n otherChars of
+  in case lookup n otherPrinting of
     Just k -> Just k
     Nothing | verifyKeyString n -> Just (Unicode n)
             | otherwise -> Nothing

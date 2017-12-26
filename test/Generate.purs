@@ -38,22 +38,6 @@ parseEither s = Left <$> parseCategory s <|> Right <$> parseKey s
 
 type Endo a = a -> a
 
--- dom-indexed: Interactive :: # Type -> # Type, HTMLdiv :: # Type
--- type Key = SpecialKeys (FunctionKeys ( ... ( "Character" :: String ) ) )
--- type FunctionKeys v = Variant ( "F1" :: Unit, "F2" :: Unit, ..., | v )
-
-{-
-myEventHandler = case _ of
-  key | keyCategory key /= Function -> Nothing
-  F 1 -> Just $ Display "You pressed f1"
-  F 2 -> Just $ Display "You pressed f2"
-  ...
-  F 12 -> Just $ ...
-  F 13 -> Just $ ...
-  Soft _ -> Just $ Display "Misc. soft key"
-  _ -> Nothing
--}
-
 run :: forall e.
   Eff
     ( fs :: FS
@@ -76,6 +60,9 @@ run = do
     folding _ s@(Tuple Nothing _) = s
     folding (Right key) (Tuple (Just cat) m) = Tuple (Just cat) $ L.Cons (Tuple key cat) m
     associations = A.reverse $ A.fromFoldable $ snd $ A.foldl (flip folding) (Tuple Nothing L.Nil) stuff
+    modifiers = associations # A.mapMaybe case _ of
+      Tuple k "Modifier" -> Just k
+      _ -> Nothing
 
     stripped :: String -> Maybe String
     stripped s = oneOfMap (show >>> S.Pattern >>> (S.stripSuffix <@> s)) (A.reverse $ enumFromTo 0 20)
@@ -109,6 +96,10 @@ run = do
     unparseBody = S.joinWith "\n" $ processedKeys <#> \(Tuple b key) ->
       if not b then "unparse " <> key <> " = " <> show key
       else "unparse (" <> key <> " i) = " <> show key <> " <> show i"
+    fromModifierBody = S.joinWith "\n" $ modifiers <#> \key ->
+      "fromModifier Modifier." <> key <> " = " <> key
+    toModifierBody = S.joinWith "\n" $ modifiers <#> \key ->
+      "toModifier " <> key <> " = Just Modifier." <> key
     categoryModule = S.joinWith "\n"
       [ """module Web.UIEvents.Key.Internal.Category where
 
@@ -122,6 +113,19 @@ import Data.Generic.Rep.Show (genericShow)
       , "derive instance genericCategory :: Generic Category _"
       , "instance showCategory :: Show Category where show = genericShow"
       ]
+    modifierModule = S.joinWith "\n"
+      [ """module Web.UIEvents.Key.Internal.Modifier where
+
+import Prelude
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
+"""
+      , "data Modifier\n  = " <> S.joinWith "\n  | " modifiers
+      , "derive instance eqModifier :: Eq Modifier"
+      , "derive instance ordModifier :: Ord Modifier"
+      , "derive instance genericModifier :: Generic Modifier _"
+      , "instance showModifier :: Show Modifier where show = genericShow"
+      ]
     keyModule = S.joinWith "\n" $
       [ """module Web.UIEvents.Key.Internal where
 
@@ -132,6 +136,8 @@ import Data.Maybe (Maybe(..))
 import Data.String as S
 import Web.UIEvents.Key.Internal.Category (Category(..)) as Category
 import Web.UIEvents.Key.Internal.Category (Category())
+import Web.UIEvents.Key.Internal.Modifier (Modifier(..)) as Modifier
+import Web.UIEvents.Key.Internal.Modifier (Modifier())
 """
       , "data Key\n  = Unicode String\n  | " <> S.joinWith "\n  | " constructors
       , "derive instance eqKey :: Eq Key"
@@ -153,8 +159,16 @@ parseImpl _ = Nothing
 
 unparse :: Key -> String
 unparse (Unicode c) = c
-"""     <> unparseBody ]
+"""     <> unparseBody <> """
+
+fromModifier :: Modifier -> Key
+"""     <> fromModifierBody <> """
+
+toModifier :: Key -> Maybe Modifier
+"""     <> toModifierBody <> """
+toModifier _ = Nothing""" ]
   FS.writeTextFile UTF8 "src/Web/UIEvents/Key/Internal/Category.purs" categoryModule
+  FS.writeTextFile UTF8 "src/Web/UIEvents/Key/Internal/Modifier.purs" modifierModule
   FS.writeTextFile UTF8 "src/Web/UIEvents/Key/Internal.purs" keyModule
   pure unit
 

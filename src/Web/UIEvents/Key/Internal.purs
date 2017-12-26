@@ -7,6 +7,8 @@ import Data.Maybe (Maybe(..))
 import Data.String as S
 import Web.UIEvents.Key.Internal.Category (Category(..)) as Category
 import Web.UIEvents.Key.Internal.Category (Category())
+import Web.UIEvents.Key.Internal.Modifier (Modifier(..)) as Modifier
+import Web.UIEvents.Key.Internal.Modifier (Modifier())
 
 data Key
   = Unicode String
@@ -1044,3 +1046,36 @@ unparse Teletext = "Teletext"
 unparse VideoModeNext = "VideoModeNext"
 unparse Wink = "Wink"
 unparse ZoomToggle = "ZoomToggle"
+
+fromModifier :: Modifier -> Key
+fromModifier Modifier.Alt = Alt
+fromModifier Modifier.AltGraph = AltGraph
+fromModifier Modifier.CapsLock = CapsLock
+fromModifier Modifier.Control = Control
+fromModifier Modifier.Fn = Fn
+fromModifier Modifier.FnLock = FnLock
+fromModifier Modifier.Meta = Meta
+fromModifier Modifier.NumLock = NumLock
+fromModifier Modifier.ScrollLock = ScrollLock
+fromModifier Modifier.Shift = Shift
+fromModifier Modifier.Symbol = Symbol
+fromModifier Modifier.SymbolLock = SymbolLock
+fromModifier Modifier.Hyper = Hyper
+fromModifier Modifier.Super = Super
+
+toModifier :: Key -> Maybe Modifier
+toModifier Alt = Just Modifier.Alt
+toModifier AltGraph = Just Modifier.AltGraph
+toModifier CapsLock = Just Modifier.CapsLock
+toModifier Control = Just Modifier.Control
+toModifier Fn = Just Modifier.Fn
+toModifier FnLock = Just Modifier.FnLock
+toModifier Meta = Just Modifier.Meta
+toModifier NumLock = Just Modifier.NumLock
+toModifier ScrollLock = Just Modifier.ScrollLock
+toModifier Shift = Just Modifier.Shift
+toModifier Symbol = Just Modifier.Symbol
+toModifier SymbolLock = Just Modifier.SymbolLock
+toModifier Hyper = Just Modifier.Hyper
+toModifier Super = Just Modifier.Super
+toModifier _ = Nothing
