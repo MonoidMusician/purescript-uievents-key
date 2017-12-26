@@ -5,7 +5,7 @@ import Prelude
 import Data.Array as A
 import Data.CodePoint.Unicode as U
 import Data.Map (Map, fromFoldable, lookup)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.String.CodePoints (toCodePointArray)
 import Data.String.Normalize (nfc)
 import Data.Tuple (Tuple(..))
@@ -26,8 +26,9 @@ verifyKeyString = toCodePointArray >>> A.uncons >>> case _ of
   Nothing -> true
   Just { head, tail } ->
     let
-      isCombining c = fromMaybe false $
-        U.generalCategory c <#> eq U.SpacingCombiningMark
+      isCombining c | U.isCombining c = true
+      isCombining c = U.generalCategory c
+        # maybe false (eq U.SpacingCombiningMark)
     in not U.isControl head && A.all isCombining tail
 
 toPrinting :: Key -> String
