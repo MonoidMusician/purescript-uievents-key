@@ -13,8 +13,8 @@ import Web.UIEvents.Key.Internal (Key(..))
 
 otherChars :: Map String Key
 otherChars = fromFoldable
-  [ Tuple "\\n" Enter
-  , Tuple "\\t" Tab
+  [ Tuple "\n" Enter
+  , Tuple "\t" Tab
   , Tuple "\x0008" Backspace
   , Tuple "\x001B" Escape
   , Tuple "\x007F" Delete

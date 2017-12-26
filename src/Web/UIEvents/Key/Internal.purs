@@ -2,14 +2,14 @@ module Web.UIEvents.Key.Internal where
 
 import Prelude
 
+import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
+import Data.String as S
 import Web.UIEvents.Key.Internal.Category (Category(..)) as Category
 import Web.UIEvents.Key.Internal.Category (Category())
 
 data Key
   = Unicode String
-  | F Int
-  | Soft Int
   | Unidentified
   | Alt
   | AltGraph
@@ -102,22 +102,8 @@ data Key
   | Romaji
   | Zenkaku
   | ZenkakuHankaku
-  | F1
-  | F2
-  | F3
-  | F4
-  | F5
-  | F6
-  | F7
-  | F8
-  | F9
-  | F10
-  | F11
-  | F12
-  | Soft1
-  | Soft2
-  | Soft3
-  | Soft4
+  | F Int
+  | Soft Int
   | ChannelDown
   | ChannelUp
   | Close
@@ -160,8 +146,7 @@ data Key
   | MicrophoneVolumeMute
   | SpeechCorrectionList
   | SpeechInputToggle
-  | LaunchApplication1
-  | LaunchApplication2
+  | LaunchApplication Int
   | LaunchCalendar
   | LaunchContacts
   | LaunchMail
@@ -201,14 +186,9 @@ data Key
   | TVContentsMenu
   | TVDataService
   | TVInput
-  | TVInputComponent1
-  | TVInputComponent2
-  | TVInputComposite1
-  | TVInputComposite2
-  | TVInputHDMI1
-  | TVInputHDMI2
-  | TVInputHDMI3
-  | TVInputHDMI4
+  | TVInputComponent Int
+  | TVInputComposite Int
+  | TVInputHDMI Int
   | TVInputVGA1
   | TVMediaContext
   | TVNetwork
@@ -235,18 +215,9 @@ data Key
   | DisplaySwap
   | DVR
   | Exit
-  | FavoriteClear0
-  | FavoriteClear1
-  | FavoriteClear2
-  | FavoriteClear3
-  | FavoriteRecall0
-  | FavoriteRecall1
-  | FavoriteRecall2
-  | FavoriteRecall3
-  | FavoriteStore0
-  | FavoriteStore1
-  | FavoriteStore2
-  | FavoriteStore3
+  | FavoriteClear Int
+  | FavoriteRecall Int
+  | FavoriteStore Int
   | Guide
   | GuideNextDay
   | GuidePreviousDay
@@ -297,10 +268,11 @@ data Key
 derive instance eqKey :: Eq Key
 derive instance ordKey :: Ord Key
 
+tryParse :: String -> String -> Maybe Int
+tryParse prefix = fromString <=< S.stripPrefix (S.Pattern prefix)
+
 category :: Key -> Category
 category (Unicode _) = Category.Character
-category (F _) = Category.Function
-category (Soft _) = Category.Function
 category Unidentified = Category.Special
 category Alt = Category.Modifier
 category AltGraph = Category.Modifier
@@ -393,22 +365,8 @@ category Katakana = Category.Composition
 category Romaji = Category.Composition
 category Zenkaku = Category.Composition
 category ZenkakuHankaku = Category.Composition
-category F1 = Category.Function
-category F2 = Category.Function
-category F3 = Category.Function
-category F4 = Category.Function
-category F5 = Category.Function
-category F6 = Category.Function
-category F7 = Category.Function
-category F8 = Category.Function
-category F9 = Category.Function
-category F10 = Category.Function
-category F11 = Category.Function
-category F12 = Category.Function
-category Soft1 = Category.Function
-category Soft2 = Category.Function
-category Soft3 = Category.Function
-category Soft4 = Category.Function
+category (F _) = Category.Function
+category (Soft _) = Category.Function
 category ChannelDown = Category.Multimedia
 category ChannelUp = Category.Multimedia
 category Close = Category.Multimedia
@@ -451,8 +409,7 @@ category MicrophoneVolumeUp = Category.Audio
 category MicrophoneVolumeMute = Category.Audio
 category SpeechCorrectionList = Category.Speech
 category SpeechInputToggle = Category.Speech
-category LaunchApplication1 = Category.Application
-category LaunchApplication2 = Category.Application
+category (LaunchApplication _) = Category.Application
 category LaunchCalendar = Category.Application
 category LaunchContacts = Category.Application
 category LaunchMail = Category.Application
@@ -492,14 +449,9 @@ category TVAudioDescriptionMixUp = Category.TV
 category TVContentsMenu = Category.TV
 category TVDataService = Category.TV
 category TVInput = Category.TV
-category TVInputComponent1 = Category.TV
-category TVInputComponent2 = Category.TV
-category TVInputComposite1 = Category.TV
-category TVInputComposite2 = Category.TV
-category TVInputHDMI1 = Category.TV
-category TVInputHDMI2 = Category.TV
-category TVInputHDMI3 = Category.TV
-category TVInputHDMI4 = Category.TV
+category (TVInputComponent _) = Category.TV
+category (TVInputComposite _) = Category.TV
+category (TVInputHDMI _) = Category.TV
 category TVInputVGA1 = Category.TV
 category TVMediaContext = Category.TV
 category TVNetwork = Category.TV
@@ -526,18 +478,9 @@ category Dimmer = Category.MediaController
 category DisplaySwap = Category.MediaController
 category DVR = Category.MediaController
 category Exit = Category.MediaController
-category FavoriteClear0 = Category.MediaController
-category FavoriteClear1 = Category.MediaController
-category FavoriteClear2 = Category.MediaController
-category FavoriteClear3 = Category.MediaController
-category FavoriteRecall0 = Category.MediaController
-category FavoriteRecall1 = Category.MediaController
-category FavoriteRecall2 = Category.MediaController
-category FavoriteRecall3 = Category.MediaController
-category FavoriteStore0 = Category.MediaController
-category FavoriteStore1 = Category.MediaController
-category FavoriteStore2 = Category.MediaController
-category FavoriteStore3 = Category.MediaController
+category (FavoriteClear _) = Category.MediaController
+category (FavoriteRecall _) = Category.MediaController
+category (FavoriteStore _) = Category.MediaController
 category Guide = Category.MediaController
 category GuideNextDay = Category.MediaController
 category GuidePreviousDay = Category.MediaController
@@ -679,22 +622,8 @@ parseImpl "Katakana" = Just Katakana
 parseImpl "Romaji" = Just Romaji
 parseImpl "Zenkaku" = Just Zenkaku
 parseImpl "ZenkakuHankaku" = Just ZenkakuHankaku
-parseImpl "F1" = Just F1
-parseImpl "F2" = Just F2
-parseImpl "F3" = Just F3
-parseImpl "F4" = Just F4
-parseImpl "F5" = Just F5
-parseImpl "F6" = Just F6
-parseImpl "F7" = Just F7
-parseImpl "F8" = Just F8
-parseImpl "F9" = Just F9
-parseImpl "F10" = Just F10
-parseImpl "F11" = Just F11
-parseImpl "F12" = Just F12
-parseImpl "Soft1" = Just Soft1
-parseImpl "Soft2" = Just Soft2
-parseImpl "Soft3" = Just Soft3
-parseImpl "Soft4" = Just Soft4
+parseImpl s | Just i <- tryParse "F" s = Just (F i)
+parseImpl s | Just i <- tryParse "Soft" s = Just (Soft i)
 parseImpl "ChannelDown" = Just ChannelDown
 parseImpl "ChannelUp" = Just ChannelUp
 parseImpl "Close" = Just Close
@@ -737,8 +666,7 @@ parseImpl "MicrophoneVolumeUp" = Just MicrophoneVolumeUp
 parseImpl "MicrophoneVolumeMute" = Just MicrophoneVolumeMute
 parseImpl "SpeechCorrectionList" = Just SpeechCorrectionList
 parseImpl "SpeechInputToggle" = Just SpeechInputToggle
-parseImpl "LaunchApplication1" = Just LaunchApplication1
-parseImpl "LaunchApplication2" = Just LaunchApplication2
+parseImpl s | Just i <- tryParse "LaunchApplication" s = Just (LaunchApplication i)
 parseImpl "LaunchCalendar" = Just LaunchCalendar
 parseImpl "LaunchContacts" = Just LaunchContacts
 parseImpl "LaunchMail" = Just LaunchMail
@@ -778,14 +706,9 @@ parseImpl "TVAudioDescriptionMixUp" = Just TVAudioDescriptionMixUp
 parseImpl "TVContentsMenu" = Just TVContentsMenu
 parseImpl "TVDataService" = Just TVDataService
 parseImpl "TVInput" = Just TVInput
-parseImpl "TVInputComponent1" = Just TVInputComponent1
-parseImpl "TVInputComponent2" = Just TVInputComponent2
-parseImpl "TVInputComposite1" = Just TVInputComposite1
-parseImpl "TVInputComposite2" = Just TVInputComposite2
-parseImpl "TVInputHDMI1" = Just TVInputHDMI1
-parseImpl "TVInputHDMI2" = Just TVInputHDMI2
-parseImpl "TVInputHDMI3" = Just TVInputHDMI3
-parseImpl "TVInputHDMI4" = Just TVInputHDMI4
+parseImpl s | Just i <- tryParse "TVInputComponent" s = Just (TVInputComponent i)
+parseImpl s | Just i <- tryParse "TVInputComposite" s = Just (TVInputComposite i)
+parseImpl s | Just i <- tryParse "TVInputHDMI" s = Just (TVInputHDMI i)
 parseImpl "TVInputVGA1" = Just TVInputVGA1
 parseImpl "TVMediaContext" = Just TVMediaContext
 parseImpl "TVNetwork" = Just TVNetwork
@@ -812,18 +735,9 @@ parseImpl "Dimmer" = Just Dimmer
 parseImpl "DisplaySwap" = Just DisplaySwap
 parseImpl "DVR" = Just DVR
 parseImpl "Exit" = Just Exit
-parseImpl "FavoriteClear0" = Just FavoriteClear0
-parseImpl "FavoriteClear1" = Just FavoriteClear1
-parseImpl "FavoriteClear2" = Just FavoriteClear2
-parseImpl "FavoriteClear3" = Just FavoriteClear3
-parseImpl "FavoriteRecall0" = Just FavoriteRecall0
-parseImpl "FavoriteRecall1" = Just FavoriteRecall1
-parseImpl "FavoriteRecall2" = Just FavoriteRecall2
-parseImpl "FavoriteRecall3" = Just FavoriteRecall3
-parseImpl "FavoriteStore0" = Just FavoriteStore0
-parseImpl "FavoriteStore1" = Just FavoriteStore1
-parseImpl "FavoriteStore2" = Just FavoriteStore2
-parseImpl "FavoriteStore3" = Just FavoriteStore3
+parseImpl s | Just i <- tryParse "FavoriteClear" s = Just (FavoriteClear i)
+parseImpl s | Just i <- tryParse "FavoriteRecall" s = Just (FavoriteRecall i)
+parseImpl s | Just i <- tryParse "FavoriteStore" s = Just (FavoriteStore i)
 parseImpl "Guide" = Just Guide
 parseImpl "GuideNextDay" = Just GuideNextDay
 parseImpl "GuidePreviousDay" = Just GuidePreviousDay
@@ -871,12 +785,10 @@ parseImpl "Teletext" = Just Teletext
 parseImpl "VideoModeNext" = Just VideoModeNext
 parseImpl "Wink" = Just Wink
 parseImpl "ZoomToggle" = Just ZoomToggle
-parseImpl c = Nothing
+parseImpl _ = Nothing
 
 unparse :: Key -> String
 unparse (Unicode c) = c
-unparse (F n) = "F" <> show n
-unparse (Soft n) = "Soft" <> show n
 unparse Unidentified = "Unidentified"
 unparse Alt = "Alt"
 unparse AltGraph = "AltGraph"
@@ -969,22 +881,8 @@ unparse Katakana = "Katakana"
 unparse Romaji = "Romaji"
 unparse Zenkaku = "Zenkaku"
 unparse ZenkakuHankaku = "ZenkakuHankaku"
-unparse F1 = "F1"
-unparse F2 = "F2"
-unparse F3 = "F3"
-unparse F4 = "F4"
-unparse F5 = "F5"
-unparse F6 = "F6"
-unparse F7 = "F7"
-unparse F8 = "F8"
-unparse F9 = "F9"
-unparse F10 = "F10"
-unparse F11 = "F11"
-unparse F12 = "F12"
-unparse Soft1 = "Soft1"
-unparse Soft2 = "Soft2"
-unparse Soft3 = "Soft3"
-unparse Soft4 = "Soft4"
+unparse (F i) = "F" <> show i
+unparse (Soft i) = "Soft" <> show i
 unparse ChannelDown = "ChannelDown"
 unparse ChannelUp = "ChannelUp"
 unparse Close = "Close"
@@ -1027,8 +925,7 @@ unparse MicrophoneVolumeUp = "MicrophoneVolumeUp"
 unparse MicrophoneVolumeMute = "MicrophoneVolumeMute"
 unparse SpeechCorrectionList = "SpeechCorrectionList"
 unparse SpeechInputToggle = "SpeechInputToggle"
-unparse LaunchApplication1 = "LaunchApplication1"
-unparse LaunchApplication2 = "LaunchApplication2"
+unparse (LaunchApplication i) = "LaunchApplication" <> show i
 unparse LaunchCalendar = "LaunchCalendar"
 unparse LaunchContacts = "LaunchContacts"
 unparse LaunchMail = "LaunchMail"
@@ -1068,14 +965,9 @@ unparse TVAudioDescriptionMixUp = "TVAudioDescriptionMixUp"
 unparse TVContentsMenu = "TVContentsMenu"
 unparse TVDataService = "TVDataService"
 unparse TVInput = "TVInput"
-unparse TVInputComponent1 = "TVInputComponent1"
-unparse TVInputComponent2 = "TVInputComponent2"
-unparse TVInputComposite1 = "TVInputComposite1"
-unparse TVInputComposite2 = "TVInputComposite2"
-unparse TVInputHDMI1 = "TVInputHDMI1"
-unparse TVInputHDMI2 = "TVInputHDMI2"
-unparse TVInputHDMI3 = "TVInputHDMI3"
-unparse TVInputHDMI4 = "TVInputHDMI4"
+unparse (TVInputComponent i) = "TVInputComponent" <> show i
+unparse (TVInputComposite i) = "TVInputComposite" <> show i
+unparse (TVInputHDMI i) = "TVInputHDMI" <> show i
 unparse TVInputVGA1 = "TVInputVGA1"
 unparse TVMediaContext = "TVMediaContext"
 unparse TVNetwork = "TVNetwork"
@@ -1102,18 +994,9 @@ unparse Dimmer = "Dimmer"
 unparse DisplaySwap = "DisplaySwap"
 unparse DVR = "DVR"
 unparse Exit = "Exit"
-unparse FavoriteClear0 = "FavoriteClear0"
-unparse FavoriteClear1 = "FavoriteClear1"
-unparse FavoriteClear2 = "FavoriteClear2"
-unparse FavoriteClear3 = "FavoriteClear3"
-unparse FavoriteRecall0 = "FavoriteRecall0"
-unparse FavoriteRecall1 = "FavoriteRecall1"
-unparse FavoriteRecall2 = "FavoriteRecall2"
-unparse FavoriteRecall3 = "FavoriteRecall3"
-unparse FavoriteStore0 = "FavoriteStore0"
-unparse FavoriteStore1 = "FavoriteStore1"
-unparse FavoriteStore2 = "FavoriteStore2"
-unparse FavoriteStore3 = "FavoriteStore3"
+unparse (FavoriteClear i) = "FavoriteClear" <> show i
+unparse (FavoriteRecall i) = "FavoriteRecall" <> show i
+unparse (FavoriteStore i) = "FavoriteStore" <> show i
 unparse Guide = "Guide"
 unparse GuideNextDay = "GuideNextDay"
 unparse GuidePreviousDay = "GuidePreviousDay"

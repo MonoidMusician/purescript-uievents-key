@@ -9,25 +9,24 @@ import Control.Monad.Eff.Exception (EXCEPTION)
 import Data.Array as A
 import Data.CodePoint.Unicode as U
 import Data.Either (Either(..))
-import Data.Foldable (for_)
+import Data.Enum (enumFromTo)
+import Data.Foldable (for_, oneOfMap)
+import Data.Function (on)
 import Data.Int as I
 import Data.List as L
 import Data.Map as M
 import Data.Maybe (Maybe(..))
+import Data.Monoid (guard)
+import Data.NonEmpty ((:|))
 import Data.String as S
 import Data.String.CodePoints (CodePoint)
 import Data.String.CodePoints as CP
 import Data.String.Normalize (nfc)
-import Data.Tuple (Tuple(..), snd)
+import Data.Tuple (Tuple(..), fst, snd)
 import Node.Encoding (Encoding(..))
 import Node.FS (FS)
 import Node.FS.Sync as FS
 
-
-showCPs :: Array CodePoint -> String
-showCPs = S.joinWith "" <<< map (append "\\x" <<< I.toStringAs I.hexadecimal <<< CP.codePointToInt)
-showCP' :: String -> String
-showCP' = showCPs <<< CP.toCodePointArray
 parseKey :: String -> Maybe String
 parseKey = S.stripPrefix (S.Pattern "KEY ") >=> S.split (S.Pattern "\t") >>> A.head
 parseCategory :: String -> Maybe String
@@ -77,10 +76,39 @@ run = do
     folding _ s@(Tuple Nothing _) = s
     folding (Right key) (Tuple (Just cat) m) = Tuple (Just cat) $ L.Cons (Tuple key cat) m
     associations = A.reverse $ A.fromFoldable $ snd $ A.foldl (flip folding) (Tuple Nothing L.Nil) stuff
-    parseImplBody = S.joinWith "\n" $ justKeys <#> \key ->
-      "parseImpl " <> show key <> " = Just " <> key
-    unparseBody = S.joinWith "\n" $ justKeys <#> \key ->
-      "unparse " <> key <> " = " <> show key
+
+    stripped :: String -> Maybe String
+    stripped s = oneOfMap (show >>> S.Pattern >>> (S.stripSuffix <@> s)) (A.reverse $ enumFromTo 0 20)
+
+    groupable :: Maybe String -> Maybe String -> Boolean
+    groupable Nothing Nothing = false
+    groupable a b = a == b
+    grouped = associations # A.groupBy case _, _ of
+      Tuple "Key11" _, _ -> false
+      _, Tuple "Key12" _ -> false
+      Tuple a c1, Tuple b c2 ->
+        if c1 == c2
+          then (groupable `on` stripped) a b
+          else false
+    processed = grouped >>= case _ of
+      Tuple key cat :| r
+        | A.length r > 0
+        , Just k <- stripped key
+        -> [Tuple (Tuple true k) cat]
+      ls -> A.fromFoldable ls <#> \(Tuple key cat) ->
+        Tuple (Tuple false key) cat
+    processedKeys = processed <#> fst
+    mkConstructor (Tuple b key) = key <> guard b " Int"
+    mkWildcardPattern (Tuple true key) = "(" <> key <> " _)"
+    mkWildcardPattern (Tuple false key) = key
+    constructors = processedKeys <#> mkConstructor
+
+    parseImplBody = S.joinWith "\n" $ processedKeys <#> \(Tuple b key) ->
+      if not b then "parseImpl " <> show key <> " = Just " <> key
+      else "parseImpl s | Just i <- tryParse " <> show key <> " s = Just (" <> key <> " i)"
+    unparseBody = S.joinWith "\n" $ processedKeys <#> \(Tuple b key) ->
+      if not b then "unparse " <> key <> " = " <> show key
+      else "unparse (" <> key <> " i) = " <> show key <> " <> show i"
     categoryModule = S.joinWith "\n"
       [ """module Web.UIEvents.Key.Internal.Category where
 
@@ -99,31 +127,32 @@ import Data.Generic.Rep.Show (genericShow)
 
 import Prelude
 
+import Data.Int (fromString)
 import Data.Maybe (Maybe(..))
+import Data.String as S
 import Web.UIEvents.Key.Internal.Category (Category(..)) as Category
 import Web.UIEvents.Key.Internal.Category (Category())
 """
-      , "data Key\n  = Unicode String\n  | F Int\n  | Soft Int\n  | " <> S.joinWith "\n  | " justKeys
+      , "data Key\n  = Unicode String\n  | " <> S.joinWith "\n  | " constructors
       , "derive instance eqKey :: Eq Key"
       , "derive instance ordKey :: Ord Key"
       , ""
+      , "tryParse :: String -> String -> Maybe Int"
+      , "tryParse prefix = fromString <=< S.stripPrefix (S.Pattern prefix)"
+      , ""
       , "category :: Key -> Category"
       , "category (Unicode _) = Category.Character"
-      , "category (F _) = Category.Function"
-      , "category (Soft _) = Category.Function"
       ] <|>
-        (associations <#> \(Tuple key category) ->
-          "category " <> key <> " = Category." <> category
+        (processed <#> \(Tuple key category) ->
+          "category " <> mkWildcardPattern key <> " = Category." <> category
         ) <|>
       [ """
 parseImpl :: String -> Maybe Key
 """     <> parseImplBody <> """
-parseImpl c = Nothing
+parseImpl _ = Nothing
 
 unparse :: Key -> String
 unparse (Unicode c) = c
-unparse (F n) = "F" <> show n
-unparse (Soft n) = "Soft" <> show n
 """     <> unparseBody ]
   FS.writeTextFile UTF8 "src/Web/UIEvents/Key/Internal/Category.purs" categoryModule
   FS.writeTextFile UTF8 "src/Web/UIEvents/Key/Internal.purs" keyModule

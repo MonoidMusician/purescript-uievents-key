@@ -1,5 +1,6 @@
 module Web.UIEvents.Key
   ( module Internal
+  , parse
   ) where
 
 import Prelude
